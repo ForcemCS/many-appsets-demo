@@ -5,16 +5,23 @@ metadata:
   namespace: argocd
 spec:
   goTemplate: true
+  #这是一个重要的选项。它指示 Go 模板引擎，如果在模板中引用了一个不存在的键，则应抛出错误。这有助于及早发现配置错误
   goTemplateOptions: ["missingkey=error"]
   generators:
   - git:
       repoURL: https://github.com/kostis-codefresh/many-appsets-demo.git
       revision: HEAD
+      #义的路径模式查找匹配的目录。每个匹配的目录都会生成一个 Application 资源。
+      #例如apps/billing/envs/prod-eu
       directories:
       - path: apps/*/envs/prod-us
-      - path: apps/*/envs/prod-eu      
+      - path: apps/*/envs/prod-eu
+  #这是定义 Application 资源模板的部分。每次生成器找到一个匹配的目录，都会使用这个模板创建一个 Application。
   template:      
     metadata:
+      # .path 代表匹配的目录路径信
+      # .path.segments 将路径分割成片段数组，例如 ["apps", "billing", "envs", "prod-us"]
+      # index .path.segments 1 获取数组的第二个元素（索引从 0 开始），也就是应用名称 (例如 "billing")。
       name: '{{index .path.segments 1}}-{{index .path.segments 3}}' 
     spec:
       # The project the application belongs to.
@@ -24,6 +31,7 @@ spec:
       source:
         repoURL: https://github.com/kostis-codefresh/many-appsets-demo.git
         targetRevision: HEAD
+        # {{.path.path}} 表示匹配的目录的完整路径。
         path: '{{.path.path}}'
       
       # Destination cluster and namespace to deploy the application
